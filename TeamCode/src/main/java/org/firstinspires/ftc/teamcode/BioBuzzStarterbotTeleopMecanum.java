@@ -32,6 +32,14 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
+import org.firstinspires.ftc.teamcode.support.GoBildaPinpointDriver;
+
+import java.util.Locale;
+
 /*
  * This file includes a teleop (driver-controlled) file for the goBILDA® StarterBot with Mecanum
  * Wheels for the 2026-2027 FIRST® Tech Challenge. On top of a mecanum wheel drivetrain, it uses
@@ -87,8 +95,12 @@ public class BioBuzzStarterbotTeleopMecanum extends OpMode {
     double leftBackPower;
     double rightBackPower;
 
+    boolean field_centric_drive = false;
+
     // Create a variable to set to the intake.
     double intakePower;
+
+    GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -101,6 +113,10 @@ public class BioBuzzStarterbotTeleopMecanum extends OpMode {
          * to 'get' must correspond to the names assigned during the robot configuration
          * step.
          */
+        // Sensors
+        odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
+
+        // Actuators
         leftFrontDrive = hardwareMap.get(DcMotor.class, "left_front_drive");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front_drive");
         leftBackDrive = hardwareMap.get(DcMotor.class, "left_back_drive");
@@ -122,6 +138,17 @@ public class BioBuzzStarterbotTeleopMecanum extends OpMode {
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+
+        // Set odo offsets ______________________________________________________________________________________________________________________________________________________________________________________
+        odo.setOffsets(-84.0, -168.0, DistanceUnit.MM);
+
+        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+
+        // Set odo directions
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+
+
+
 
         /*
          * Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to
@@ -178,6 +205,7 @@ public class BioBuzzStarterbotTeleopMecanum extends OpMode {
      */
     @Override
     public void start() {
+        odo.resetPosAndIMU();
     }
 
     /*
@@ -185,6 +213,22 @@ public class BioBuzzStarterbotTeleopMecanum extends OpMode {
      */
     @Override
     public void loop() {
+        odo.update();
+
+        // Odometry pods status updates
+        telemetry.addData("Status", "Initialized");
+        telemetry.addData("X offset", odo.getXOffset(DistanceUnit.MM));
+        telemetry.addData("Y offset", odo.getYOffset(DistanceUnit.MM));
+        telemetry.addData("Device Version Number:", odo.getDeviceVersion());
+        telemetry.addData("Heading Scalar", odo.getYawScalar());
+        telemetry.update();
+
+        // Reset position or recalibrate
+        if (gamepad1.circleWasPressed()) {
+            odo.resetPosAndIMU(); //resets the position to 0 and recalibrates the IMU
+        } else if (gamepad1.crossWasPressed()) {
+            odo.recalibrateIMU(); //recalibrates the IMU without resetting position
+        }
         /*
          * Here we call a function called mecanumDrive. The mecanumDrive function takes the input from
          * the joysticks, and applies power to the drive motors to move the robot as requested
@@ -195,7 +239,7 @@ public class BioBuzzStarterbotTeleopMecanum extends OpMode {
          * Note, moving the joystick forward on most gamepads results in a negative signal, so
          * we invert it before passing it to the function.
          */
-        mecanumDrive(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
+        fieldCentricDrive(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
 
         /*
          * Set the intake power variable to equal the right trigger, minus the left trigger.
@@ -226,6 +270,42 @@ public class BioBuzzStarterbotTeleopMecanum extends OpMode {
         rightIntakeServo.setPower(intakePower);
 
         /*
+            gets the current Position (x & y in mm, and heading in degrees) of the robot, and prints it.
+             */
+
+
+        Pose2D pos = odo.getPosition();
+        String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", pos.getX(DistanceUnit.MM), pos.getY(DistanceUnit.MM), pos.getHeading(AngleUnit.DEGREES));
+        telemetry.addData("Position", data);
+
+            /*
+            gets the current Velocity (x & y in mm/sec and heading in degrees/sec) and prints it.
+             */
+        String velocity = String.format(Locale.US,"{XVel: %.3f, YVel: %.3f, HVel: %.3f}", odo.getVelX(DistanceUnit.MM), odo.getVelY(DistanceUnit.MM), odo.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
+        telemetry.addData("Velocity", velocity);
+
+        // Handle field centric enable/disable buttons
+        if (gamepad1.squareWasPressed()) { // Square looks like field
+            field_centric_drive = true;
+        } else if (gamepad1.triangleWasPressed()) { // Triangle is messy like bot
+            field_centric_drive = false;
+        }
+
+
+            /*
+            Gets the Pinpoint device status. Pinpoint can reflect a few states. But we'll primarily see
+            READY: the device is working as normal
+            CALIBRATING: the device is calibrating and outputs are put on hold
+            NOT_READY: the device is resetting from scratch. This should only happen after a power-cycle
+            FAULT_NO_PODS_DETECTED - the device does not detect any pods plugged in
+            FAULT_X_POD_NOT_DETECTED - The device does not detect an X pod plugged in
+            FAULT_Y_POD_NOT_DETECTED - The device does not detect a Y pod plugged in
+            FAULT_BAD_READ - The firmware detected a bad I²C read, if a bad read is detected, the device status is updated and the previous position is reported
+            */
+        telemetry.addData("Status", odo.getDeviceStatus());
+
+        telemetry.addData("Pinpoint Frequency", odo.getFrequency()); //prints/gets the current refresh rate of the Pinpoint
+        /*
          * Show motor powers on the Driver Station via telemetry.
          */
         telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftFrontPower, rightFrontPower);
@@ -239,16 +319,42 @@ public class BioBuzzStarterbotTeleopMecanum extends OpMode {
     public void stop() {
     }
 
+
+    // Call this function with drive commands and enable or disable field_centric_drive
+    void fieldCentricDrive(double forward, double strafe, double rotate) {
+        if (field_centric_drive) {
+            // Get position in RADIANS for Math.sin
+            Pose2D pos = odo.getPosition();
+            double heading = pos.getHeading(AngleUnit.RADIANS);
+
+            // Get new speeds
+            double newForward = (Math.sin(heading + Math.toRadians(90)) * forward);
+            double newStrafe = (Math.sin(heading) * strafe);
+            newForward += (Math.cos(heading + Math.toRadians(90)) * strafe);
+            newStrafe  += (Math.cos(heading + Math.toRadians(heading)) * strafe);
+
+            // Drive accordingly
+            mecanumDrive(newForward, newStrafe, rotate);
+        } else {
+            // Drive regularly
+            mecanumDrive(forward, strafe, rotate);
+        }
+    }
+
+    // Use this ONLY for driving robot directly
     void mecanumDrive(double forward, double strafe, double rotate) {
+        // Get wheel speeds
         leftFrontPower = forward + strafe + rotate;
         rightFrontPower = forward - strafe - rotate;
         leftBackPower = forward - strafe + rotate;
         rightBackPower = forward + strafe - rotate;
 
+        // Check highest wheel speed to avoid running all at 100% and not turning
         double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
         max = Math.max(max, Math.abs(leftBackPower));
         max = Math.max(max, Math.abs(rightBackPower));
 
+        // Limit results
         if (max > 1.0) {
             leftFrontPower /= max;
             rightFrontPower /= max;
@@ -256,9 +362,7 @@ public class BioBuzzStarterbotTeleopMecanum extends OpMode {
             rightBackPower /= max;
         }
 
-        /*
-         * Send calculated power to wheels
-         */
+        // Send power to wheels
         leftFrontDrive.setPower(leftFrontPower);
         rightFrontDrive.setPower(rightFrontPower);
         leftBackDrive.setPower(leftBackPower);
