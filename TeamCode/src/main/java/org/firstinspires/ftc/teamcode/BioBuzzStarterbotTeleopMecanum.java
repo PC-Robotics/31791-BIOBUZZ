@@ -191,6 +191,13 @@ public class BioBuzzStarterbotTeleopMecanum extends OpMode {
          * Tell the driver that initialization is complete.
          */
         telemetry.addData("Status", "Initialized");
+        // Odometry pods status updates
+        telemetry.addData("Status", "Initialized");
+        telemetry.addData("X offset", odo.getXOffset(DistanceUnit.MM));
+        telemetry.addData("Y offset", odo.getYOffset(DistanceUnit.MM));
+        telemetry.addData("Device Version Number:", odo.getDeviceVersion());
+        telemetry.addData("Heading Scalar", odo.getYawScalar());
+        telemetry.update();
     }
 
     /*
@@ -214,14 +221,6 @@ public class BioBuzzStarterbotTeleopMecanum extends OpMode {
     @Override
     public void loop() {
         odo.update();
-
-        // Odometry pods status updates
-        telemetry.addData("Status", "Initialized");
-        telemetry.addData("X offset", odo.getXOffset(DistanceUnit.MM));
-        telemetry.addData("Y offset", odo.getYOffset(DistanceUnit.MM));
-        telemetry.addData("Device Version Number:", odo.getDeviceVersion());
-        telemetry.addData("Heading Scalar", odo.getYawScalar());
-        telemetry.update();
 
         // Reset position or recalibrate
         if (gamepad1.circleWasPressed()) {
@@ -328,10 +327,32 @@ public class BioBuzzStarterbotTeleopMecanum extends OpMode {
             double heading = pos.getHeading(AngleUnit.RADIANS);
 
             // Get new speeds
-            double newForward = (Math.sin(heading + Math.toRadians(90)) * forward);
-            double newStrafe = (Math.sin(heading) * strafe);
-            newForward += (Math.cos(heading + Math.toRadians(90)) * strafe);
-            newStrafe  += (Math.cos(heading + Math.toRadians(heading)) * strafe);
+            double newStrafe = strafe * Math.cos(-heading) - forward * Math.sin(-heading);
+            double newForward =  strafe * Math.sin(-heading) + forward * Math.cos(-heading);
+
+            /** gm0.org code
+             *              y is left stick y -> forward
+             *              x is left stick x -> strafe
+             *              rotX is strafe
+             *              rotY is forward
+             *
+             *              // Rotate the movement direction counter to the bot's rotation
+             *             double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
+             *             double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
+             *
+             *             rotX = rotX * 1.1;  // Counteract imperfect strafing
+             *
+             *             // Denominator is the largest motor power (absolute value) or 1
+             *             // This ensures all the powers maintain the same ratio,
+             *             // but only if at least one is out of the range [-1, 1]
+             *             double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
+             *             double frontLeftPower = (rotY + rotX + rx) / denominator;
+             *             double backLeftPower = (rotY - rotX + rx) / denominator;
+             *             double frontRightPower = (rotY - rotX - rx) / denominator;
+             *             double backRightPower = (rotY + rotX - rx) / denominator;
+             */
+
+            newForward = newForward * 1.1;  // Counteract imperfect strafing
 
             // Drive accordingly
             mecanumDrive(newForward, newStrafe, rotate);
