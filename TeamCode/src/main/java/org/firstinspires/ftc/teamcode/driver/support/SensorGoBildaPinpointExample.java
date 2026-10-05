@@ -20,7 +20,7 @@
  *   SOFTWARE.
  */
 
-package org.firstinspires.ftc.teamcode.support;
+package org.firstinspires.ftc.teamcode.driver.support;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
