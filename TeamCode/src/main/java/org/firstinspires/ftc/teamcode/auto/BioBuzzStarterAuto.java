@@ -39,6 +39,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit
 import org.firstinspires.ftc.teamcode.driver.support.GoBildaPinpointDriver;
 
 import java.util.Locale;
+import java.util.Vector;
 
 @Autonomous(name = "Last resort: move back/forth", group = "StarterBot")
 //@Disabled
@@ -138,7 +139,7 @@ public class BioBuzzStarterAuto extends OpMode {
 
         // Odo initialization
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
 
 
         // STATUS ==================================================================================
@@ -186,21 +187,55 @@ public class BioBuzzStarterAuto extends OpMode {
     // Helper function definitions
     // =============================================================================================
 
+    public void monitorPosition() {
+        Pose2D pos = odo.getPosition();
+        telemetry.addData("Position x: ", pos.getX(DistanceUnit.CM));
+        telemetry.addData("Position y: ", pos.getY(DistanceUnit.CM));
+        telemetry.update();
+    }
+
+    public void move(double x, double y) {
+        Pose2D pos = odo.getPosition();
+        double finalX = Math.abs(pos.getX(DistanceUnit.CM) + x);
+        double finalY = Math.abs(pos.getY(DistanceUnit.CM) + y);
+        double distance = Math.sqrt(x * x + y * y);
+        double xMultiplier = x/distance;
+        double yMultiplier = y/distance;
+        while (Math.abs(pos.getX(DistanceUnit.CM)) < finalX) {
+            mecanumDrive(0.3*xMultiplier, 0.3*yMultiplier, 0);
+            odo.update();
+            pos = odo.getPosition();
+            monitorPosition();
+        }
+        while (Math.abs(pos.getX(DistanceUnit.CM)) < finalY) {
+            mecanumDrive(0, 0.3, 0);
+            odo.update();
+            pos = odo.getPosition();
+            monitorPosition();
+        }
+    }
 
     public void driveFwdAndBack() {
+        move(100, 0);
+        move(0,50);
+        move(-50,0);
+        /*
         Pose2D pos = odo.getPosition();
         while (pos.getX(DistanceUnit.CM) < 50) {
             mecanumDrive(0.3, 0, 0);
             odo.update();
             pos = odo.getPosition();
+            monitorPosition();
         }
         mecanumDrive(0,0, 0);
         while(pos.getX(DistanceUnit.CM) > 0) {
             mecanumDrive(-0.3, 0, 0);
             odo.update();
             pos = odo.getPosition();
+            monitorPosition();
         }
         mecanumDrive(0, 0, 0);
+        */
     }
     // Update intake power
     public void handleIntake() {
