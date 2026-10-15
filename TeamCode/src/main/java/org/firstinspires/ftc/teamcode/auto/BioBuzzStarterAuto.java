@@ -64,17 +64,11 @@ public class BioBuzzStarterAuto extends OpMode {
     public final int LAUNCHER_TIMEOUT = 5000;
 
 
-
     // Define drive motor power in entire class for telemetry
     double leftFrontPower;
     double rightFrontPower;
     double leftBackPower;
     double rightBackPower;
-    double intakePower;
-    boolean field_centric_drive = true;
-    boolean reachedTarget = false;
-    boolean subtracted = false;
-    int launches = 0; // Tracks how many balls need to be launched
 
 
     GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
@@ -89,7 +83,7 @@ public class BioBuzzStarterAuto extends OpMode {
     public void init() {
         // SET UP HARDWARE MAPS ====================================================================
         // Sensors
-        odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
+        odo = hardwareMap.get(GoBildaPinpointDriver.class, "odo");
 
         // Actuators
         leftFrontDrive = hardwareMap.get(DcMotor.class, "left_front_drive");
@@ -199,10 +193,10 @@ public class BioBuzzStarterAuto extends OpMode {
         double finalX = Math.abs(pos.getX(DistanceUnit.CM) + x);
         double finalY = Math.abs(pos.getY(DistanceUnit.CM) + y);
         double distance = Math.sqrt(x * x + y * y);
-        double xMultiplier = x/distance;
-        double yMultiplier = y/distance;
+        double xMultiplier = x / distance;
+        double yMultiplier = y / distance;
         while (Math.abs(pos.getX(DistanceUnit.CM)) < finalX) {
-            mecanumDrive(0.3*xMultiplier, 0.3*yMultiplier, 0);
+            mecanumDrive(0.3 * xMultiplier, 0.3 * yMultiplier, 0);
             odo.update();
             pos = odo.getPosition();
             monitorPosition();
@@ -216,10 +210,10 @@ public class BioBuzzStarterAuto extends OpMode {
     }
 
     public void driveFwdAndBack() {
-        move(100, 0);
-        move(0,50);
-        move(-50,0);
-        /*
+//        move(100, 0);
+//        move(0,50);
+//        move(-50,0);
+
         Pose2D pos = odo.getPosition();
         while (pos.getX(DistanceUnit.CM) < 50) {
             mecanumDrive(0.3, 0, 0);
@@ -227,85 +221,14 @@ public class BioBuzzStarterAuto extends OpMode {
             pos = odo.getPosition();
             monitorPosition();
         }
-        mecanumDrive(0,0, 0);
-        while(pos.getX(DistanceUnit.CM) > 0) {
+        mecanumDrive(0, 0, 0);
+        while (pos.getX(DistanceUnit.CM) > 0) {
             mecanumDrive(-0.3, 0, 0);
             odo.update();
             pos = odo.getPosition();
             monitorPosition();
         }
         mecanumDrive(0, 0, 0);
-        */
-    }
-    // Update intake power
-    public void handleIntake() {
-        intakePower = gamepad1.right_trigger - gamepad1.left_trigger;
-
-        intake.setPower(intakePower);
-        leftIntakeServo.setPower(intakePower);
-        rightIntakeServo.setPower(intakePower);
-    }
-
-    // Display status and data on driver station
-    public void displayTelemetry() {
-        // Odometry
-        Pose2D pos = odo.getPosition();
-        String data = String.format(Locale.US, "X: %.3f, Y: %.3f, H: %.3f", pos.getX(DistanceUnit.MM), pos.getY(DistanceUnit.MM), pos.getHeading(AngleUnit.DEGREES));
-        telemetry.addData("Position: ", data);
-
-        String velocity = String.format(Locale.US,"X Vel: %.3f, Y Vel: %.3f, Heading Vel: %.3f", odo.getVelX(DistanceUnit.MM), odo.getVelY(DistanceUnit.MM), odo.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
-        telemetry.addData("Velocities: ", velocity);
-
-        // Drive status
-        telemetry.addData("Status", odo.getDeviceStatus());
-
-        telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftFrontPower, rightFrontPower);
-        telemetry.addData("Triggers", "left (%.2f, right (%.2f)",gamepad1.left_trigger, gamepad1.right_trigger);
-
-    }
-
-    // Handle top controller buttons
-    public void controllerButtons() {
-        // Handle field centric enable/disable buttons
-        if (gamepad1.squareWasPressed()) { // Square looks like field
-            field_centric_drive = true;
-        } else if (gamepad1.triangleWasPressed()) { // Triangle is messy like bot
-            field_centric_drive = false;
-        }
-
-        // Reset position or recalibrate
-        if (gamepad1.circleWasPressed()) {
-            odo.resetPosAndIMU(); //resets the position to 0 and recalibrates the IMU
-        }
-        if (gamepad1.crossWasPressed()) {
-            launches = 0;
-        }
-
-        if (gamepad1.left_bumper) {
-            windmillServo.setPower(1);
-        }
-    }
-
-    // Call this function with drive commands and enable or disable field_centric_drive
-    void fieldCentricDrive(double forward, double strafe, double rotate) {
-        if (field_centric_drive) {
-            // Get position in RADIANS for Math.sin
-            Pose2D pos = odo.getPosition();
-            double heading = pos.getHeading(AngleUnit.RADIANS);
-
-            // Get new speeds
-            double newStrafe = strafe * Math.cos(-heading) - forward * Math.sin(-heading);
-            double newForward =  strafe * Math.sin(-heading) + forward * Math.cos(-heading);
-
-            // Counteract imperfect strafing
-            newForward = newForward * 1.1;
-
-            // Drive accordingly
-            mecanumDrive(newForward, newStrafe, rotate);
-        } else {
-            // Drive regularly
-            mecanumDrive(forward, strafe, rotate);
-        }
     }
 
     // Use this ONLY for driving robot directly
@@ -335,54 +258,4 @@ public class BioBuzzStarterAuto extends OpMode {
         leftBackDrive.setPower(leftBackPower);
         rightBackDrive.setPower(rightBackPower);
     }
-
-    // Call from loop to handle launcher functions
-    void launch() {
-        ElapsedTime lastLaunchMillis = new ElapsedTime(); // Tracks the last launch time for timeout
-
-        // Add another ball to the launch queue
-        if (gamepad1.rightBumperWasPressed()) {
-            launches += 1;
-            lastLaunchMillis.reset();
-        }
-
-        // Set launcher motor speed
-        if (launches > 0) {
-            launcher.setVelocity(LAUNCHER_TARGET_VELOCITY);
-        } else {
-            launcher.setVelocity(0);
-            reachedTarget = false;
-        }
-
-        // Timeout if no balls are shot within the time limit
-        if (lastLaunchMillis.time() > LAUNCHER_TIMEOUT && launches > 0) {
-            launches = 0;
-        }
-
-        // The launcher reached target once passed min velocity
-        if (launcher.getVelocity() > LAUNCHER_MIN_VELOCITY) {
-            reachedTarget = true;
-            subtracted = false;
-        }
-
-        // If the launcher slows down below minimum, a ball has been shot
-        if (launcher.getVelocity() < LAUNCHER_MIN_VELOCITY && reachedTarget) {
-            launches -= 1;
-            subtracted = true;
-            lastLaunchMillis.reset();
-        }
-
-        // Once the launcher gets up to speed, feed balls and slowly run intake to dislodge
-        // stuck balls
-        if (launches > 0 && launcher.getVelocity() > LAUNCHER_MIN_VELOCITY) {
-            windmillServo.setPower(1);
-            intakePower += 0.5;
-        } else if (!gamepad1.left_bumper) {
-            windmillServo.setPower(0);
-        }
-    }
-
-    // =============================================================================================
-    // End helper function definitions
-    // =============================================================================================
 }
