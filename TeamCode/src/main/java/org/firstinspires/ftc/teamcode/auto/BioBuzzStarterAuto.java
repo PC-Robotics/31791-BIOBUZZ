@@ -154,6 +154,7 @@ public class BioBuzzStarterAuto extends OpMode {
     @Override
     public void start() {
         odo.resetPosAndIMU();
+        odo.update();
         driveFwdAndBack();
     }
 
@@ -214,16 +215,18 @@ public class BioBuzzStarterAuto extends OpMode {
 //        move(0,50);
 //        move(-50,0);
 
+        monitorPosition();
+
         Pose2D pos = odo.getPosition();
-        while (pos.getX(DistanceUnit.CM) < 50) {
+        while (pos.getX(DistanceUnit.CM) < 7) {
             mecanumDrive(0.3, 0, 0);
             odo.update();
             pos = odo.getPosition();
             monitorPosition();
         }
         mecanumDrive(0, 0, 0);
-        while (pos.getX(DistanceUnit.CM) > 0) {
-            mecanumDrive(-0.3, 0, 0);
+        while (pos.getY(DistanceUnit.CM) < 50) {
+            mecanumDrive(0, -0.3, 0);
             odo.update();
             pos = odo.getPosition();
             monitorPosition();
