@@ -144,10 +144,7 @@ public class DriveBaseOdometry extends DriveBase
         return robotPosition;
     }
 
-    public double getXPosition(DistanceUnit unit)
-    {
-        return robotPosition.getX(unit);
-    }
+    public double getXPosition(DistanceUnit unit) { return robotPosition.getX(unit); }
     public double getYPosition(DistanceUnit unit)
     {
         return robotPosition.getY(unit);

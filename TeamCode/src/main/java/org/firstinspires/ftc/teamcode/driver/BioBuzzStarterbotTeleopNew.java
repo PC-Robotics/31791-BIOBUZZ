@@ -44,7 +44,7 @@ import org.firstinspires.ftc.teamcode.driver.support.GoBildaPinpointDriver;
 
 import java.util.Locale;
 
-@TeleOp(name = "CLICK ME: NewBot Teleop", group = "StarterBot")
+@TeleOp(name = "SAFE: NewBot Teleop", group = "StarterBot")
 //@Disabled
 
 public class BioBuzzStarterbotTeleopNew extends OpMode {

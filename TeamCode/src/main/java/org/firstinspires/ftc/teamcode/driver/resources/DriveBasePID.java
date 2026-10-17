@@ -27,8 +27,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.driver.support.PIDController;
 
-public class DriveBasePID extends DriveBaseOdometry
-{
+public class DriveBasePID extends DriveBaseOdometry {
     private ElapsedTime holdTimer = new ElapsedTime();
     private ElapsedTime pathTimer = new ElapsedTime();
     private PIDController driveController = new PIDController(DRIVE_KP,DRIVE_KI,DRIVE_KD,DRIVE_MAX_AUTO,DRIVE_TOLERANCE,DRIVE_DEADBAND,false);
