@@ -40,11 +40,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
-import org.firstinspires.ftc.teamcode.driver.support.GoBildaPinpointDriver;
+import org.firstinspires.ftc.teamcode.support.GoBildaPinpointDriver;
 
 import java.util.Locale;
 
-@TeleOp(name = "BETA: NewBot Teleop includes REVERSE LAUNCH", group = "StarterBot")
+@TeleOp(name = "SAFE: Teleop with launch reverse", group = "StarterBot")
 //@Disabled
 
 public class BioBuzzStarterbotTeleop2 extends OpMode {

@@ -1,24 +1,24 @@
-package org.firstinspires.ftc.teamcode.driver.support;
+package org.firstinspires.ftc.teamcode.support;
 
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 public class PIDController {
 
-    private double Kp;
-    private double Ki;
-    private double Kd;
+    private final double Kp;
+    private final double Ki;
+    private final double Kd;
 
     private double integralSum;
     private double lastError;
 
     private double liveOutputLimit;
-    private double outputLimit;
+    private final double outputLimit;
     private double setPoint;
-    private double tolerance;
-    private double deadband;
+    private final double tolerance;
+    private final double deadband;
 
-    private boolean circular;
+    private final boolean circular;
     private boolean inPosition;
 
     ElapsedTime cycleTime = new ElapsedTime();
