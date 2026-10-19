@@ -82,18 +82,22 @@ public class RobotHardware {
     public void drive(double axial, double lateral, double yaw) {
 
         // Make field-centric
-        double botHeading = -getHeading(AngleUnit.RADIANS);
-        double rotatedX = lateral * Math.cos(botHeading) - axial * Math.sin(botHeading);
-        double rotatedY = lateral * Math.sin(botHeading) + axial * Math.cos(botHeading);
-        lateral = rotatedX;
-        axial = rotatedY;
+        Pose2D pos = odo.getPosition();
+        double heading = pos.getHeading(AngleUnit.RADIANS);
+
+        // Get new speeds
+        double strafe = lateral * Math.cos(-heading) - axial * Math.sin(-heading);
+        double forward =  lateral * Math.sin(-heading) + axial * Math.cos(-heading);
+
+        // Counteract imperfect strafing
+        forward = forward * 1.1;
 
         // Fit range
         double denominator = Math.max(Math.abs(axial) + Math.abs(lateral) + Math.abs(yaw), 1);
-        double leftFrontPower  = (axial + lateral + yaw) / denominator;
-        double rightFrontPower = (axial - lateral - yaw) / denominator;
-        double leftRearPower   = (axial - lateral + yaw) / denominator;
-        double rightRearPower  = (axial + lateral - yaw) / denominator;
+        double leftFrontPower  = (forward + strafe + yaw) / denominator;
+        double rightFrontPower = (forward - strafe - yaw) / denominator;
+        double leftRearPower   = (forward - strafe + yaw) / denominator;
+        double rightRearPower  = (forward + strafe - yaw) / denominator;
 
         // Do something
         leftFrontDrive.setPower(leftFrontPower);
@@ -162,6 +166,11 @@ public class RobotHardware {
             double xDistance = xLocation - getXPosition(DistanceUnit.INCH);
             double yDistance = yLocation - getYPosition(DistanceUnit.INCH);
 
+            // Rotate odometry input left 90 degrees
+            double tempXDistance = xDistance;
+            xDistance = yDistance;
+            yDistance = tempXDistance;
+
             double axialPower = driveController.getOutputFromError(yDistance);
             double lateralPower = strafeController.getOutputFromError(xDistance);
             double yawPower = yawController.getOutput(getHeading(AngleUnit.DEGREES));
@@ -188,5 +197,6 @@ public class RobotHardware {
         telemetry.addData("Y-Position", odo.getPosY(DistanceUnit.MM));
         telemetry.addData("X-Position", odo.getPosX(DistanceUnit.MM));
         telemetry.addData("Heading Deg", odo.getHeading(AngleUnit.DEGREES));
+        telemetry.update();
     }
 }

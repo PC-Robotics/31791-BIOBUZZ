@@ -20,14 +20,17 @@ public class GoToPositionAuto extends LinearOpMode {
         waitForStart();
 
         if (opModeIsActive()) {
-            bot.goToPosition(20, 20, 170, 1, 0.5, 10);
 
-            int fails = bot.launch(2, 2000);
-
-            telemetry.addData("Fails", fails);
-            telemetry.update();
-
-            bot.goToPosition(0, 0, 0, 0.5, 1, 5);
+            bot.drive(1, 1 ,0);
+            while(true);
+//            bot.goToPosition(20, 20, 170, 1, 0.5, 10);
+//
+//            int fails = bot.launch(2, 2000);
+//
+//            telemetry.addData("Fails", fails);
+//            telemetry.update();
+//
+//            bot.goToPosition(0, 0, 0, 0.5, 1, 5);
         }
     }
 }
