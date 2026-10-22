@@ -170,8 +170,6 @@ public class RobotHardware {
             if (launches > 0 && launcher.getVelocity() > (LAUNCHER_TARGET_VELOCITY - LAUNCHER_MIN_VELOCITY)) {
                 windmillServo.setPower(1);
                 intake(0.5);
-            } else if (!opMode.gamepad1.left_bumper) {
-                windmillServo.setPower(0);
             }
         }
         windmillServo.setPower(0);
