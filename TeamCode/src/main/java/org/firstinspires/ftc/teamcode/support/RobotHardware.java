@@ -56,6 +56,8 @@ public class RobotHardware {
         // Odo initialization
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+        odo.resetPosAndIMU();
+        odo.update();
 
         leftFrontDrive = hardwareMap.get(DcMotor.class, "left_front_drive");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front_drive");

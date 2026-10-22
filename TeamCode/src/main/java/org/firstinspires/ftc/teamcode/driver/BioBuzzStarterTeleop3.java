@@ -19,7 +19,7 @@ import org.firstinspires.ftc.teamcode.support.GoBildaPinpointDriver;
 
 import java.util.Locale;
 
-@TeleOp(name = "CLICK THIS: Teleop with two controllers", group = "StarterBot")
+@TeleOp(name = "Mirrored controllers", group = "StarterBot")
 //@Disabled
 
 public class BioBuzzStarterTeleop3 extends OpMode {
