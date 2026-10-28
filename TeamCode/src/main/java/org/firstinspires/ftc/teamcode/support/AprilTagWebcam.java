@@ -15,7 +15,6 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagSingleDetection;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class AprilTagWebcam {
     private AprilTagProcessor aprilTagProcessor;
@@ -55,11 +54,18 @@ public class AprilTagWebcam {
         return tagList;
     }
 
-/*    public void displayDetectionTelemetry(AprilTagSingleDetection detectedId) {
-        if(detectedId.metadata != null) {
-
+    public void displayDetectionTelemetry(AprilTagSingleDetection detectedId) {
+        if (detectedId.metadata != null) {
+            telemetry.addLine(String.format("\n==== (ID %d) %s", detectedId.id, detectedId.metadata.name));
+            telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detectedId.ftcPose.x, detectedId.ftcPose.y, detectedId.ftcPose.z));
+            telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detectedId.ftcPose.pitch, detectedId.ftcPose.roll, detectedId.ftcPose.yaw));
+            telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detectedId.ftcPose.range, detectedId.ftcPose.bearing, detectedId.ftcPose.elevation));
         }
-    } START HERE NEXT TIME */
+        else {
+            telemetry.addLine(String.format("\n==== (ID %d) Unknown", detectedId.id));
+            telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detectedId.center.x, detectedId.center.y));
+        }
+    }
 
     public AprilTagSingleDetection getTagBySpecificId(int id) {
         List<AprilTagSingleDetection> tags = getDetectedTags();
