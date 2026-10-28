@@ -53,10 +53,22 @@ public class RobotHardware {
     public void init() {
         odo = hardwareMap.get(GoBildaPinpointDriver.class, "odo");
 
+        // Odo initialization
+        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+        odo.resetPosAndIMU();
+        odo.update();
+
         leftFrontDrive = hardwareMap.get(DcMotor.class, "left_front_drive");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front_drive");
         leftRearDrive = hardwareMap.get(DcMotor.class, "left_back_drive");
         rightRearDrive = hardwareMap.get(DcMotor.class, "right_back_drive");
+
+        // DO NOT FORGET THIS!!!!!!!!!!
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftRearDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightRearDrive.setDirection(DcMotor.Direction.FORWARD);
 
         intake = hardwareMap.get(DcMotor.class, "intake");
         launcher = hardwareMap.get(DcMotorEx.class, "launcher");
@@ -76,6 +88,24 @@ public class RobotHardware {
         intake.setPower(power);
         leftIntakeServo.setPower(power);
         rightIntakeServo.setPower(power);
+    }
+
+    public void testDrivetrain() throws InterruptedException {
+        leftFrontDrive.setPower(1);
+        Thread.sleep(1000);
+        leftFrontDrive.setPower(0);
+
+        rightFrontDrive.setPower(1);
+        Thread.sleep(1000);
+        rightFrontDrive.setPower(0);
+
+        leftRearDrive.setPower(1);
+        Thread.sleep(1000);
+        leftRearDrive.setPower(0);
+
+        rightRearDrive.setPower(1);
+        Thread.sleep(1000);
+        rightRearDrive.setPower(0);
     }
 
     // --- Core Action Methods ---
@@ -110,6 +140,7 @@ public class RobotHardware {
         boolean reachedTarget = false;
         boolean subtracted = false;
         ElapsedTime lastLaunchMillis = new ElapsedTime();
+        lastLaunchMillis.reset();
 
         if (launches > 0) {
             launcher.setVelocity(LAUNCHER_TARGET_VELOCITY);
@@ -139,8 +170,6 @@ public class RobotHardware {
             if (launches > 0 && launcher.getVelocity() > (LAUNCHER_TARGET_VELOCITY - LAUNCHER_MIN_VELOCITY)) {
                 windmillServo.setPower(1);
                 intake(0.5);
-            } else if (!opMode.gamepad1.left_bumper) {
-                windmillServo.setPower(0);
             }
         }
         windmillServo.setPower(0);
@@ -149,7 +178,7 @@ public class RobotHardware {
         return 0;
     }
 
-    public void goToPosition(double yLocation, double xLocation, double headingDegree, double power, double holdTime, double pathTime) {
+    public void goTo(double yLocation, double xLocation, double headingDegree, double power, double holdTime, double pathTime) {
         ElapsedTime pathTimer = new ElapsedTime();
         ElapsedTime holdTimer = new ElapsedTime();
 

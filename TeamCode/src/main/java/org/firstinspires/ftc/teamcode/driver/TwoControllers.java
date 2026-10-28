@@ -1,0 +1,285 @@
+/*
+    Use controller 1 for driving & intake; use controller 2 for launch, windmill, and additional
+*/
+
+package org.firstinspires.ftc.teamcode.driver;
+
+import static com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE;
+
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
+import org.firstinspires.ftc.teamcode.support.GoBildaPinpointDriver;
+
+import java.util.Locale;
+
+@TeleOp(name = "CLICK THIS: Teleop with two controllers", group = "StarterBot")
+public class TwoControllers extends OpMode {
+
+    //  --- Create actuator variables ---
+    private DcMotor leftFrontDrive = null;
+    private DcMotor leftBackDrive = null;
+    private DcMotor rightFrontDrive = null;
+    private DcMotor rightBackDrive = null;
+    private DcMotorEx launcher = null;
+    private DcMotor intake = null;
+    private CRServo leftIntakeServo = null;
+    private CRServo rightIntakeServo = null;
+    private CRServo windmillServo = null;
+
+
+    // Set target and min velocity of flywheel for launching (ticks per second)
+    public int launcher_target_velocity = 1265;
+    public final int LAUNCHER_MIN_VELOCITY = 50;
+    public final int LAUNCHER_TIMEOUT = 5000;
+
+
+
+    // Define drive motor power in entire class for telemetry
+    double leftFrontPower;
+    double rightFrontPower;
+    double leftBackPower;
+    double rightBackPower;
+    double intakePower;
+    boolean field_centric_drive = true;
+    boolean reachedTarget = false;
+    boolean subtracted = false;
+    int launches = 0; // Tracks how many balls need to be launched
+    GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
+
+    @Override
+    public void init() {
+        // --- Sensors ---
+        odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
+
+        // Todo: measure & set offsets
+        odo.setOffsets(-84.0, -168.0, DistanceUnit.MM);
+        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        odo.resetPosAndIMU();
+        odo.update();
+
+        // --- Actuators ---
+        leftFrontDrive = hardwareMap.get(DcMotor.class, "left_front_drive");
+        rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front_drive");
+        leftBackDrive = hardwareMap.get(DcMotor.class, "left_back_drive");
+        rightBackDrive = hardwareMap.get(DcMotor.class, "right_back_drive");
+        intake = hardwareMap.get(DcMotor.class, "intake");
+        launcher = hardwareMap.get(DcMotorEx.class, "launcher");
+        windmillServo = hardwareMap.get(CRServo.class, "windmillServo");
+        leftIntakeServo = hardwareMap.get(CRServo.class, "left_intake_servo");
+        rightIntakeServo = hardwareMap.get(CRServo.class, "right_intake_servo");
+
+        // Drivetrain Motor Directions
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+
+        // Brake when not powered
+        leftFrontDrive.setZeroPowerBehavior(BRAKE);
+        rightFrontDrive.setZeroPowerBehavior(BRAKE);
+        leftBackDrive.setZeroPowerBehavior(BRAKE);
+        rightBackDrive.setZeroPowerBehavior(BRAKE);
+        intake.setZeroPowerBehavior(BRAKE);
+        launcher.setZeroPowerBehavior(BRAKE);
+
+        // Feedback for launcher
+        launcher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        launcher.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(40, 0, 0, 12.5));
+
+        // Start servos in off position
+        leftIntakeServo.setPower(0);
+        rightIntakeServo.setPower(0);
+        windmillServo.setPower(0);
+
+        rightIntakeServo.setDirection(DcMotorSimple.Direction.REVERSE);
+
+
+        // --- Telemetry ---
+        telemetry.addData("Status", "Initialized");
+        telemetry.addData("X offset", odo.getXOffset(DistanceUnit.MM));
+        telemetry.addData("Y offset", odo.getYOffset(DistanceUnit.MM));
+        telemetry.addData("Device Version Number:", odo.getDeviceVersion());
+        telemetry.addData("Heading Scalar", odo.getYawScalar());
+        telemetry.update();
+
+    }
+
+    // ================ KEEP MINIMAL CODE IN LOOP ================
+    @Override
+    public void loop() {
+        odo.update();
+
+        controller1Buttons();
+
+        controller2Buttons();
+
+        launch();
+        fieldCentricDrive(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
+        displayTelemetry();
+    }
+
+    public void displayTelemetry() {
+        // Odometry
+        Pose2D pos = odo.getPosition();
+        String data = String.format(Locale.US, "X: %.3f, Y: %.3f, H: %.3f", pos.getX(DistanceUnit.MM), pos.getY(DistanceUnit.MM), pos.getHeading(AngleUnit.DEGREES));
+        telemetry.addData("Position: ", data);
+
+        String velocity = String.format(Locale.US,"X Vel: %.3f, Y Vel: %.3f, Heading Vel: %.3f", odo.getVelX(DistanceUnit.MM), odo.getVelY(DistanceUnit.MM), odo.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
+        telemetry.addData("Velocities: ", velocity);
+
+        // Drive status
+        telemetry.addData("Status", odo.getDeviceStatus());
+
+        telemetry.addData("Target Launch Speed", launcher_target_velocity);
+        telemetry.addData("Minimum Launcher Speed", (launcher_target_velocity - LAUNCHER_MIN_VELOCITY));
+        telemetry.addData("Actual launcher speed", launcher.getVelocity());
+
+        telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftFrontPower, rightFrontPower);
+        telemetry.addData("Triggers", "left (%.2f, right (%.2f)",gamepad1.left_trigger, gamepad1.right_trigger);
+
+    }
+
+    // Handle button presses
+    public void controller1Buttons() {
+        // --- Intake ---
+        intakePower = (gamepad1.right_trigger + gamepad2.right_trigger) - (gamepad1.left_trigger + gamepad2.right_trigger);
+        intake.setPower(intakePower);
+        leftIntakeServo.setPower(intakePower);
+        rightIntakeServo.setPower(intakePower);
+
+        // --- Field-Centric Controls ---
+        if (gamepad1.squareWasPressed()) {
+            field_centric_drive = true;
+        } else if (gamepad1.triangleWasPressed()) {
+            field_centric_drive = false;
+        } else if (gamepad1.circleWasPressed()) {
+            odo.resetPosAndIMU();
+            odo.update();
+        }
+    }
+    public void controller2Buttons() {
+        // --- Windmill Servo ---
+        if (gamepad2.dpad_left) {
+            windmillServo.setPower(-1);
+        }
+        if (gamepad2.dpad_right) {
+            windmillServo.setPower(1);
+        }
+
+        // --- Launcher ---
+        if (gamepad2.crossWasPressed()) {
+            launches = 0;
+        }
+        if (launches == 0) {
+            launcher.setPower(gamepad1.left_stick_y);
+        }
+    }
+
+    // Call this function with drive commands and enable or disable field_centric_drive
+    void fieldCentricDrive(double forward, double strafe, double rotate) {
+        if (field_centric_drive) {
+            // Get position in RADIANS for Math.sin
+            Pose2D pos = odo.getPosition();
+            double heading = pos.getHeading(AngleUnit.RADIANS);
+
+            // Get new speeds
+            double newStrafe = strafe * Math.cos(-heading) - forward * Math.sin(-heading);
+            double newForward =  strafe * Math.sin(-heading) + forward * Math.cos(-heading);
+
+            // Counteract imperfect strafing
+            newForward = newForward * 1.1;
+
+            // Drive accordingly
+            mecanumDrive(newForward, newStrafe, rotate);
+        } else {
+            // Drive regularly
+            mecanumDrive(forward, strafe, rotate);
+        }
+    }
+
+    // Use this ONLY for driving the robot directly
+    void mecanumDrive(double forward, double strafe, double rotate) {
+        // Get wheel speeds
+        leftFrontPower = forward + strafe + rotate;
+        rightFrontPower = forward - strafe - rotate;
+        leftBackPower = forward - strafe + rotate;
+        rightBackPower = forward + strafe - rotate;
+
+        // Check highest wheel speed to avoid running all at 100% and not turning
+        double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+        max = Math.max(max, Math.abs(leftBackPower));
+        max = Math.max(max, Math.abs(rightBackPower));
+
+        // Limit results
+        if (max > 1.0) {
+            leftFrontPower /= max;
+            rightFrontPower /= max;
+            leftBackPower /= max;
+            rightBackPower /= max;
+        }
+
+        // Send power to wheels
+        leftFrontDrive.setPower(leftFrontPower);
+        rightFrontDrive.setPower(rightFrontPower);
+        leftBackDrive.setPower(leftBackPower);
+        rightBackDrive.setPower(rightBackPower);
+    }
+
+    // Call from loop to handle launcher functions
+    void launch() {
+        ElapsedTime lastLaunchMillis = new ElapsedTime(); // Tracks the last launch time for timeout
+
+        // Add another ball to the launch queue
+        if (gamepad2.rightBumperWasPressed()) {
+            launches += 1;
+            lastLaunchMillis.reset();
+        }
+
+        // Set launcher motor speed
+        if (launches > 0) {
+            launcher.setVelocity(launcher_target_velocity);
+        } else {
+            launcher.setVelocity(0);
+            reachedTarget = false;
+        }
+
+        // Timeout if no balls are shot within the time limit
+        if (lastLaunchMillis.time() > LAUNCHER_TIMEOUT && launches > 0) {
+            launches = 0;
+        }
+
+        // The launcher reached target once passed min velocity
+        if (launcher.getVelocity() > (launcher_target_velocity - LAUNCHER_MIN_VELOCITY)) {
+            reachedTarget = true;
+            subtracted = false;
+        }
+
+        // If the launcher slows down below minimum, a ball has been shot
+        if (launcher.getVelocity() < (launcher_target_velocity - LAUNCHER_MIN_VELOCITY) && reachedTarget) {
+            launches -= 1;
+            subtracted = true;
+            lastLaunchMillis.reset();
+        }
+
+        // Once the launcher gets up to speed, feed balls and slowly run intake to dislodge
+        // stuck balls
+        if (launches > 0 && launcher.getVelocity() > (launcher_target_velocity - LAUNCHER_MIN_VELOCITY)) {
+            windmillServo.setPower(1);
+            intakePower += 0.5;
+        } else if (!gamepad1.left_bumper) {
+            windmillServo.setPower(0);
+        }
+    }
+}

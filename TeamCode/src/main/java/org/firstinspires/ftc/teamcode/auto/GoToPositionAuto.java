@@ -7,11 +7,10 @@ import org.firstinspires.ftc.teamcode.support.RobotHardware;
 
 @Autonomous(name="Go to Position Auto v1", group = "StarterBot")
 public class GoToPositionAuto extends LinearOpMode {
-    private RobotHardware bot;
 
     @Override
     public void runOpMode() throws InterruptedException {
-        bot = new RobotHardware(this);
+        RobotHardware bot = new RobotHardware(this);
         bot.init();
 
         telemetry.addData("Status", "Initialized");
@@ -20,17 +19,15 @@ public class GoToPositionAuto extends LinearOpMode {
         waitForStart();
 
         if (opModeIsActive()) {
+            bot.goTo(20, 20, 180, 1, 1 ,5);
+            bot.goTo(100, 20, 180, 1, 1, 5);
+            bot.goTo(100, 100, 180, 1, 1, 5);
 
-            bot.drive(1, 1 ,0);
-            while(true);
-//            bot.goToPosition(20, 20, 170, 1, 0.5, 10);
-//
-//            int fails = bot.launch(2, 2000);
-//
-//            telemetry.addData("Fails", fails);
-//            telemetry.update();
-//
-//            bot.goToPosition(0, 0, 0, 0.5, 1, 5);
+            int fails = bot.launch(2, 2000);
+
+            telemetry.addData("Fails", fails);
+            telemetry.update();
+            bot.goTo(0, 0, 0, 1, 1, 5);
         }
     }
 }

@@ -1,6 +1,8 @@
 # IMPORTANT notes you should read
 If you are having issues with something, check here first
 
+If this does not solve your issues, ask [Google](https://google.com)
+
 ## Launcher
 - Flywheel connects to ***Control Hub*** motor port 0
 - Windmill servo (4-sided ball mover servo) connects to port 2 on the ***control hub***
@@ -49,6 +51,17 @@ Buttons:
 
 ___
 # General Information
+
+## Driving
+
+Steps:
+- Get the hardware map motors
+- Set the directions of the motors
+- Set the stopping mode
+- Get direction speeds based on the target direction accounting for field-centric driving
+- Get the power outputs per motor based on direction speeds
+- Divide power outputs by largest power output
+- Send power to motors
 
 ## Creating OpModes
 
@@ -111,3 +124,5 @@ This is done inside Android Studio directly, using the following steps:
 5) You will be prompted for a class name for the copy.
    Choose something meaningful based on the purpose of this class.
    Start with a capital letter, and remember that there may be more similar classes later.
+
+# For additional help, consult [Google](https://google.com)
