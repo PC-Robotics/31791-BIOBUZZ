@@ -13,6 +13,7 @@ buildscript {
     }
 }
 
+
 plugins {
     // Note for FTC Teams: Do not modify this yourself.
     id 'com.android.application' version '8.13.2' apply false
@@ -34,4 +35,10 @@ repositories {
     mavenCentral()
     maven { url 'https://maven.brott.dev' }
     maven { url 'https://maven.createlogs.org' }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
 }
