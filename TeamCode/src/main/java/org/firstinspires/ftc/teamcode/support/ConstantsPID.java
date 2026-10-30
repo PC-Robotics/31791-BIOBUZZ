@@ -24,15 +24,15 @@ public class ConstantsPID
 
 
     // Constants dealing with turning
-    public static double YAW_KP = 0.02;
+    public static double YAW_KP = 0.025;
     public static double YAW_KI = 0;
-    public static double YAW_KD = 0;
+    public static double YAW_KD = 0.0015;
     public static final double YAW_TOLERANCE = 2;
     public static final double YAW_DEADBAND = .25;
     public static final double YAW_MAX_AUTO = 0.8;
 
     //Constants dealing with launch velocity
-    public static double LAUNCHER_TARGET_VELOCITY = 1540; // Target launcher speed for pollen
+    public static double LAUNCHER_TARGET_VELOCITY = 1265; // Target launcher speed for pollen
     public static double LAUNCHER_MIN_VELOCITY = 50; // An offset from target
 
 

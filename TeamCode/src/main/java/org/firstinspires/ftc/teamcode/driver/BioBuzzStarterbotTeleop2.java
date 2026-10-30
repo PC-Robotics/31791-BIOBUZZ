@@ -240,7 +240,7 @@ public class BioBuzzStarterbotTeleop2 extends OpMode {
         if (gamepad1.dpadUpWasPressed()) {
             launcher_target_velocity += 5;
         } else if (gamepad1.dpadDownWasPressed()) {
-            launcher_target_velocity += -5;
+            launcher_target_velocity -= 5;
         }
 
         if (gamepad1.dpad_left) {
