@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.auto;/*   MIT License
+/*   MIT License
  *   Copyright (c) [2026] [Base 10 Assets, LLC]
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,6 +19,8 @@ package org.firstinspires.ftc.teamcode.auto;/*   MIT License
  *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *   SOFTWARE.
  */
+
+package org.firstinspires.ftc.teamcode.auto;
 
 import static com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE;
 

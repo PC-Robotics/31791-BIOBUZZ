@@ -80,9 +80,9 @@ public class holdPositionMirrored extends OpMode {
     boolean subtracted = false;
     int launches = 0; // Tracks how many balls need to be launched
 
-    private final PIDController strafeController = new PIDController(STRAFE_KP, STRAFE_KI, STRAFE_KD, STRAFE_MAX_AUTO, STRAFE_TOLERANCE, STRAFE_DEADBAND, false, "Strafe", dBoardTelemetry);
-    private final PIDController yawController = new PIDController(YAW_KP, YAW_KI, YAW_KD, YAW_MAX_AUTO, YAW_TOLERANCE, YAW_DEADBAND, true, "Yaw", dBoardTelemetry);
-    private final PIDController driveController = new PIDController(DRIVE_KP, DRIVE_KI, DRIVE_KD, DRIVE_MAX_AUTO, DRIVE_TOLERANCE, DRIVE_DEADBAND, false, "Drive", dBoardTelemetry);
+    private final PIDController strafeController = new PIDController(STRAFE_KP, STRAFE_KI, STRAFE_KD, STRAFE_MAX_AUTO, STRAFE_TOLERANCE, STRAFE_DEADBAND, false);
+    private final PIDController yawController = new PIDController(YAW_KP, YAW_KI, YAW_KD, YAW_MAX_AUTO, YAW_TOLERANCE, YAW_DEADBAND, true);
+    private final PIDController driveController = new PIDController(DRIVE_KP, DRIVE_KI, DRIVE_KD, DRIVE_MAX_AUTO, DRIVE_TOLERANCE, DRIVE_DEADBAND, false);
 
     GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
 
@@ -146,8 +146,7 @@ public class holdPositionMirrored extends OpMode {
 
 
         // ODOMETRY ================================================================================
-        // Set odo offsets REQUIRES CHANGING________________________________________________________
-        odo.setOffsets(-84.0, -168.0, DistanceUnit.MM);
+        odo.setOffsets(0, -4.0, DistanceUnit.MM);
 
         // Odo initialization
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
@@ -217,48 +216,47 @@ public class holdPositionMirrored extends OpMode {
     // Helper function definitions
     // =============================================================================================
 
-    public void drive(double axial, double lateral, double yaw) {
+    public void drive(double axial, double lateral, double yaw, double power)
+    {
+        // Convert to field-centric if enabled
+        if (false) {
+            double botHeading = -getHeading(AngleUnit.RADIANS);
 
-        // Make field-centric
-        Pose2D pos = odo.getPosition();
-        double heading = pos.getHeading(AngleUnit.RADIANS);
+            double rotatedX = lateral * Math.cos(botHeading) - axial * Math.sin(botHeading);
+            double rotatedY = lateral * Math.sin(botHeading) + axial * Math.cos(botHeading);
 
-        // Get new speeds
-        double strafe = lateral * Math.cos(-heading) - axial * Math.sin(-heading);
-        double forward =  lateral * Math.sin(-heading) + axial * Math.cos(-heading);
+            lateral = rotatedX;
+            axial = rotatedY;
+        }
 
-        // Counteract imperfect strafing
-        forward = forward * 1.1;
-
-        // Fit range
+        // Normalize powers
         double denominator = Math.max(Math.abs(axial) + Math.abs(lateral) + Math.abs(yaw), 1);
-        leftFrontPower  = (forward + strafe + yaw) / denominator;
-        rightFrontPower = (forward - strafe - yaw) / denominator;
-        leftBackPower   = (forward - strafe + yaw) / denominator;
-        rightBackPower  = (forward + strafe - yaw) / denominator;
+        double leftFrontPower  = (axial + lateral + yaw) / denominator;
+        double rightFrontPower = (axial - lateral - yaw) / denominator;
+        double leftRearPower   = (axial - lateral + yaw) / denominator;
+        double rightRearPower  = (axial + lateral - yaw) / denominator;
 
-        // Do something
-        leftFrontDrive.setPower(leftFrontPower);
-        leftRearDrive.setPower(leftBackPower);
-        rightFrontDrive.setPower(rightFrontPower);
-        rightRearDrive.setPower(rightBackPower);
+        // Apply scaled power
+        leftFrontDrive.setPower(leftFrontPower * power);
+        leftRearDrive.setPower(leftRearPower * power);
+        rightFrontDrive.setPower(rightFrontPower * power);
+        rightRearDrive.setPower(rightRearPower * power);
     }
 
     public void goTo(double yLocation, double xLocation, double headingDegree) {
-        yLocation = yLocation * 0.0393701;
-        xLocation = xLocation * 0.0393701;
-
-        yawController.reset(headingDegree, 1);
-
         double xDistance = xLocation - getXPosition(DistanceUnit.INCH);
         double yDistance = yLocation - getYPosition(DistanceUnit.INCH);
 
-        double lateralPower = strafeController.getOutputFromError(xDistance);
-        double yawPower = yawController.getOutput(getHeading(AngleUnit.DEGREES));
-        double axialPower = driveController.getOutputFromError(yDistance);
+        double negativeRadianHeading = -getHeading(AngleUnit.RADIANS);
 
-        drive(axialPower, -lateralPower, -yawPower);
+        double rotatedX = xDistance * Math.cos(negativeRadianHeading) - yDistance * Math.sin(negativeRadianHeading);
+        double rotatedY = xDistance * Math.sin(negativeRadianHeading) + yDistance * Math.cos(negativeRadianHeading);
 
+        double axialPower = driveController.getOutputFromError(rotatedX);
+        double lateralPower = strafeController.getOutputFromError(rotatedY);
+        double yawPower = yawController.getOutput(headingDegree);
+
+        drive(axialPower, -lateralPower, -yawPower, 1);
     }
 
     // Update intake power

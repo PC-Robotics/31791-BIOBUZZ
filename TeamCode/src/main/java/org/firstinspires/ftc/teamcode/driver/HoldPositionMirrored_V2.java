@@ -69,7 +69,7 @@ import java.util.Locale;
  *   - Robot buzzes/jitters while holding -> lower VEL_DAMP_* gains.
  *   - Then adjust DISTURB_* thresholds and the power caps.
  */
-@TeleOp(name = "Hold Position Mirrored", group = "StarterBot")
+@TeleOp(name = "Hold Position Mirrored V2", group = "StarterBot")
 public class HoldPositionMirrored_V2 extends OpMode {
 
     // ------------------------------------------------------------------
@@ -162,15 +162,15 @@ public class HoldPositionMirrored_V2 extends OpMode {
     // adaptive cap is applied in holdPosition().
     private final PIDController holdStrafeController = new PIDController(
             STRAFE_KP, STRAFE_KI, STRAFE_KD, 1.0,
-            0.0, 0.0, false, "HoldStrafe", dBoardTelemetry);
+            0.0, 0.0, false);
 
     private final PIDController holdYawController = new PIDController(
             YAW_KP, YAW_KI, YAW_KD, 1.0,
-            0.0, 0.0, true, "HoldYaw", dBoardTelemetry);
+            0.0, 0.0, true);
 
     private final PIDController holdDriveController = new PIDController(
             DRIVE_KP, DRIVE_KI, DRIVE_KD, 1.0,
-            0.0, 0.0, false, "HoldDrive", dBoardTelemetry);
+            0.0, 0.0, false);
 
     // ==================================================================
     // OpMode lifecycle
