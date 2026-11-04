@@ -3,17 +3,22 @@ package org.firstinspires.ftc.teamcode.support;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
 public class PIDController {
+
+    private final Telemetry dashboardTelemetry;
+
 
     private final double Kp;
     private final double Ki;
     private final double Kd;
+    private final String name;
 
     private double integralSum;
     private double lastError;
 
     private double liveOutputLimit;
-    private final double outputLimit;
     private double setPoint;
     private final double tolerance;
     private final double deadband;
@@ -25,16 +30,17 @@ public class PIDController {
 
     public PIDController(double Kp, double Ki, double Kd,
                          double outputLimit, double tolerance,
-                         double deadband, boolean circular)
+                         double deadband, boolean circular, String name, Telemetry telemetry)
     {
         this.Kp = Kp;
         this.Ki = Ki;
         this.Kd = Kd;
-        this.outputLimit = outputLimit;
         liveOutputLimit = outputLimit;
         this.tolerance = tolerance;
         this.deadband = deadband;
         this.circular = circular;
+        this.name = name;
+        this.dashboardTelemetry = telemetry;
     }
 
     public double getOutput(double input)
@@ -58,6 +64,11 @@ public class PIDController {
             lastError = error;
 
             output = (error * Kp) + (derivative * Kd) + (integralSum * Ki);
+
+            this.dashboardTelemetry.addData((name + "_Error"), error);
+            this.dashboardTelemetry.addData((name + "_P-Output"), (error * Kp));
+            this.dashboardTelemetry.addData((name + "_I-Output"), (integralSum * Ki));
+            this.dashboardTelemetry.addData((name + "_D-Output"), (derivative * Kd));
         }
 
         cycleTime.reset();
@@ -70,11 +81,6 @@ public class PIDController {
     public boolean isInPosition()
     {
         return inPosition;
-    }
-
-    public double getSetPoint()
-    {
-        return setPoint;
     }
 
     public double getOutputFromError(double error)
@@ -109,13 +115,6 @@ public class PIDController {
     {
         this.setPoint = setPoint;
         liveOutputLimit = Math.abs(powerLimit);
-        reset();
-    }
-
-    public void reset(double setPoint)
-    {
-        this.setPoint = setPoint;
-        liveOutputLimit = outputLimit;
         reset();
     }
 

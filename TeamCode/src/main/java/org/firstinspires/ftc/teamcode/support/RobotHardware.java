@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.support;
 
 import static org.firstinspires.ftc.teamcode.support.ConstantsPID.*;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -36,17 +37,27 @@ public class RobotHardware {
     // Odometry Driver
     public GoBildaPinpointDriver odo;
     private Pose2D robotPosition = null;
+    private final DistanceUnit DistanceUnits;
+
+    FtcDashboard Dashboard = FtcDashboard.getInstance();
+
+    Telemetry dBoardTelemetry = Dashboard.getTelemetry();
 
     // PID Controllers
-    private final PIDController driveController = new PIDController(DRIVE_KP, DRIVE_KI, DRIVE_KD, DRIVE_MAX_AUTO, DRIVE_TOLERANCE, DRIVE_DEADBAND, false);
-    private final PIDController strafeController = new PIDController(STRAFE_KP, STRAFE_KI, STRAFE_KD, STRAFE_MAX_AUTO, STRAFE_TOLERANCE, STRAFE_DEADBAND, false);
-    private final PIDController yawController = new PIDController(YAW_KP, YAW_KI, YAW_KD, YAW_MAX_AUTO, YAW_TOLERANCE, YAW_DEADBAND, true);
+    private final PIDController strafeController = new PIDController(STRAFE_KP, STRAFE_KI, STRAFE_KD, STRAFE_MAX_AUTO, STRAFE_TOLERANCE, STRAFE_DEADBAND, false, "Strafe", dBoardTelemetry);
+    private final PIDController yawController = new PIDController(YAW_KP, YAW_KI, YAW_KD, YAW_MAX_AUTO, YAW_TOLERANCE, YAW_DEADBAND, true, "Yaw", dBoardTelemetry);
+    private final PIDController driveController = new PIDController(DRIVE_KP, DRIVE_KI, DRIVE_KD, DRIVE_MAX_AUTO, DRIVE_TOLERANCE, DRIVE_DEADBAND, false, "Drive", dBoardTelemetry);
 
     // Constructor: Takes the active OpMode to access its hardwareMap and telemetry
-    public RobotHardware(LinearOpMode opMode) {
+    public RobotHardware(LinearOpMode opMode, DistanceUnit DistanceUnits) {
         this.opMode = opMode;
         this.hardwareMap = opMode.hardwareMap;
         this.telemetry = opMode.telemetry;
+        this.DistanceUnits = DistanceUnits;
+    }
+
+    public void updateDBoardTelemetry() {
+        dBoardTelemetry.update();
     }
 
     // Initialize all hardware components
@@ -90,23 +101,6 @@ public class RobotHardware {
         rightIntakeServo.setPower(power);
     }
 
-    public void testDrivetrain() throws InterruptedException {
-        leftFrontDrive.setPower(1);
-        Thread.sleep(1000);
-        leftFrontDrive.setPower(0);
-
-        rightFrontDrive.setPower(1);
-        Thread.sleep(1000);
-        rightFrontDrive.setPower(0);
-
-        leftRearDrive.setPower(1);
-        Thread.sleep(1000);
-        leftRearDrive.setPower(0);
-
-        rightRearDrive.setPower(1);
-        Thread.sleep(1000);
-        rightRearDrive.setPower(0);
-    }
 
     // --- Core Action Methods ---
     public void drive(double axial, double lateral, double yaw) {
@@ -149,7 +143,7 @@ public class RobotHardware {
         }
 
         while (opMode.opModeIsActive() && launches > 0) {
-            if (lastLaunchMillis.time() > timeoutMillis) {
+            if (lastLaunchMillis.milliseconds() > timeoutMillis) {
                 windmillServo.setPower(0);
                 intake(0);
                 launcher.setVelocity(0);
@@ -179,6 +173,9 @@ public class RobotHardware {
     }
 
     public void goTo(double yLocation, double xLocation, double headingDegree, double power, double holdTime, double pathTime) {
+        xLocation = DistanceUnit.INCH.fromUnit(this.DistanceUnits, xLocation);
+        yLocation = DistanceUnit.INCH.fromUnit(this.DistanceUnits, yLocation);
+
         ElapsedTime pathTimer = new ElapsedTime();
         ElapsedTime holdTimer = new ElapsedTime();
 
@@ -197,12 +194,12 @@ public class RobotHardware {
 
             // Rotate odometry input left 90 degrees
             double tempXDistance = xDistance;
-            xDistance = yDistance;
-            yDistance = tempXDistance;
+            xDistance = 1 * yDistance;
+            yDistance = -tempXDistance;
 
-            double axialPower = driveController.getOutputFromError(yDistance);
             double lateralPower = strafeController.getOutputFromError(xDistance);
             double yawPower = yawController.getOutput(getHeading(AngleUnit.DEGREES));
+            double axialPower = driveController.getOutputFromError(yDistance);
 
             drive(axialPower, -lateralPower, -yawPower);
 
@@ -221,6 +218,7 @@ public class RobotHardware {
 
     public void updatePositionAndTelemetry() {
         odo.update();
+        updateDBoardTelemetry();
         robotPosition = odo.getPosition();
 
         telemetry.addData("Y-Position", odo.getPosY(DistanceUnit.MM));
