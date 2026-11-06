@@ -65,7 +65,7 @@ public class DriveBaseOdometry extends DriveBase
         you move the robot to the left.
          */
         //TODO: Run the simple odometry teleop and pay attention to telemetry values to make sure the directions are set correctly
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED );
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD );
 
         resetPositionAndOdometry();
 
@@ -132,6 +132,7 @@ public class DriveBaseOdometry extends DriveBase
     public void resetPositionAndOdometry()
     {
         odo.resetPosAndIMU();
+        odo.update();
     }
 
     public void setRobotPosition(Pose2D position)

@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.apriltag;
 
 import android.util.Size;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -45,6 +46,23 @@ public class AprilTagDetector {
         builder.addProcessor(aprilTagProcessor);
 
         visionPortal = builder.build();
+
+        // Stream real-time camera feed to FTC Dashboard
+        startDashboardStream(30);
+    }
+
+    public void startDashboardStream(double maxFps) {
+        if (visionPortal != null) {
+            FtcDashboard.getInstance().startCameraStream(visionPortal, maxFps);
+        }
+    }
+
+    public void stopDashboardStream() {
+        FtcDashboard.getInstance().stopCameraStream();
+    }
+
+    public VisionPortal getVisionPortal() {
+        return visionPortal;
     }
 
     public void setCameraPitchAngleDeg(double angleDeg) {
@@ -164,6 +182,7 @@ public class AprilTagDetector {
     }
 
     public void stop() {
+        stopDashboardStream();
         if (visionPortal != null) {
             visionPortal.close();
         }

@@ -51,34 +51,16 @@ public class PIDController {
         this.telemetry = telemetry;
     }
 
+    public void setPID(double Kp, double Ki, double Kd) {
+        this.Kp = Kp;
+        this.Ki = Ki;
+        this.Kd = Kd;
+    }
+
     public double getOutput(double input)
     {
         double error = setPoint - input;
-        double output;
-
-
-        if(Math.abs(error) < deadband)
-        {
-            output = 0;
-        }
-        else {
-            if (circular) {
-                while (error > 180) error -= 360;
-                while (error <= -180) error += 360;
-            }
-
-            integralSum += error * cycleTime.seconds();
-            double derivative = (error - lastError) / cycleTime.seconds();
-            lastError = error;
-
-            output = (error * Kp) + (derivative * Kd) + (integralSum * Ki);
-        }
-
-        cycleTime.reset();
-
-        inPosition = (Math.abs(error) < tolerance);
-
-        return Range.clip(output,-liveOutputLimit,liveOutputLimit);
+        return getOutputFromError(error);
     }
 
     public boolean isInPosition()
@@ -95,7 +77,7 @@ public class PIDController {
     {
         double output;
 
-        if(Math.abs(error) < deadband)
+        if (Math.abs(error) < deadband)
         {
             output = 0;
         }
@@ -105,8 +87,20 @@ public class PIDController {
                 while (error <= -180) error += 360;
             }
 
-            integralSum += error * cycleTime.seconds();
-            double derivative = (error - lastError) / cycleTime.seconds();
+            double dt = cycleTime.seconds();
+            if (dt <= 0.0001) dt = 0.0001;
+
+            integralSum += error * dt;
+
+            double derivative = 0;
+            if (lastError != 0.0) {
+                double diff = error - lastError;
+                if (circular) {
+                    while (diff > 180) diff -= 360;
+                    while (diff <= -180) diff += 360;
+                }
+                derivative = diff / dt;
+            }
             lastError = error;
 
             output = (error * Kp) + (derivative * Kd) + (integralSum * Ki);
@@ -116,7 +110,7 @@ public class PIDController {
 
         inPosition = (Math.abs(error) < tolerance);
 
-        return Range.clip(output,-liveOutputLimit,liveOutputLimit);
+        return Range.clip(output, -liveOutputLimit, liveOutputLimit);
     }
 
     public void reset(double setPoint, double powerLimit)

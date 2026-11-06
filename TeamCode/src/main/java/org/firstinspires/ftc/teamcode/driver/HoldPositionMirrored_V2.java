@@ -29,6 +29,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
+import org.firstinspires.ftc.teamcode.apriltag.AprilTagDetector;
 import org.firstinspires.ftc.teamcode.support.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.support.PIDController;
 
@@ -86,6 +87,7 @@ public class HoldPositionMirrored_V2 extends OpMode {
     private CRServo windmillServo;
 
     private GoBildaPinpointDriver odo;
+    private AprilTagDetector aprilTagDetector;
 
     private final FtcDashboard dashboard = FtcDashboard.getInstance();
     private final Telemetry dBoardTelemetry = dashboard.getTelemetry();
@@ -178,6 +180,8 @@ public class HoldPositionMirrored_V2 extends OpMode {
     @Override
     public void init() {
         odo = hardwareMap.get(GoBildaPinpointDriver.class, "odo");
+        aprilTagDetector = new AprilTagDetector();
+        aprilTagDetector.init(hardwareMap, telemetry);
 
         leftFrontDrive = hardwareMap.get(DcMotor.class, "left_front_drive");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front_drive");
@@ -261,6 +265,7 @@ public class HoldPositionMirrored_V2 extends OpMode {
 
     @Override
     public void stop() {
+        if (aprilTagDetector != null) aprilTagDetector.stop();
         setDrivePower(0, 0, 0, 0);
         setIntakePower(0);
         launcher.setVelocity(0);

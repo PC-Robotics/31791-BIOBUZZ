@@ -36,6 +36,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
+import org.firstinspires.ftc.teamcode.apriltag.AprilTagDetector;
 import org.firstinspires.ftc.teamcode.support.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.support.PIDController;
 
@@ -85,6 +86,7 @@ public class holdPositionMirrored extends OpMode {
     private final PIDController driveController = new PIDController(DRIVE_KP, DRIVE_KI, DRIVE_KD, DRIVE_MAX_AUTO, DRIVE_TOLERANCE, DRIVE_DEADBAND, false);
 
     GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
+    AprilTagDetector aprilTagDetector;
 
     // --- Simple Helpers ---
     public double getXPosition(DistanceUnit unit) { return robotPosition != null ? robotPosition.getX(unit) : 0; }
@@ -102,6 +104,8 @@ public class holdPositionMirrored extends OpMode {
         // SET UP HARDWARE MAPS ====================================================================
         // Sensors
         odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
+        aprilTagDetector = new AprilTagDetector();
+        aprilTagDetector.init(hardwareMap, telemetry);
 
         // Actuators
         leftFrontDrive = hardwareMap.get(DcMotor.class, "left_front_drive");
@@ -207,6 +211,7 @@ public class holdPositionMirrored extends OpMode {
     // Run one time when STOP is pressed
     @Override
     public void stop() {
+        if (aprilTagDetector != null) aprilTagDetector.stop();
     }
     // =============================================================================================
     // End system function definitions

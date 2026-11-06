@@ -7,6 +7,7 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -95,6 +96,24 @@ public class DriveBase
     {
         drive(axial,lateral,yaw,1);
     }
+    public void driveRobotRelative(double axial, double lateral, double yaw, double power)
+    {
+        double denominator = Math.max(Math.abs(axial) + Math.abs(lateral) + Math.abs(yaw), 1);
+        double leftFrontPower  = (axial + lateral + yaw) / denominator;
+        double rightFrontPower = (axial - lateral - yaw) / denominator;
+        double leftRearPower   = (axial - lateral + yaw) / denominator;
+        double rightRearPower  = (axial + lateral - yaw) / denominator;
+
+        leftFrontDrive.setPower(leftFrontPower * power);
+        leftRearDrive.setPower(leftRearPower * power);
+        rightFrontDrive.setPower(rightFrontPower * power);
+        rightRearDrive.setPower(rightRearPower * power);
+
+        myOpMode.telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
+        myOpMode.telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftRearPower, rightRearPower);
+        myOpMode.telemetry.addData("Heading", getHeading(AngleUnit.DEGREES));
+    }
+
     /**
      * Standard POV Mecanum drive code
      * @param axial left joystick y value
@@ -114,23 +133,7 @@ public class DriveBase
             axial = rotatedY;
         }
 
-        // Normalize powers
-        double denominator = Math.max(Math.abs(axial) + Math.abs(lateral) + Math.abs(yaw), 1);
-        double leftFrontPower  = (axial + lateral + yaw) / denominator;
-        double rightFrontPower = (axial - lateral - yaw) / denominator;
-        double leftRearPower   = (axial - lateral + yaw) / denominator;
-        double rightRearPower  = (axial + lateral - yaw) / denominator;
-
-        // Apply scaled power
-        leftFrontDrive.setPower(leftFrontPower * power);
-        leftRearDrive.setPower(leftRearPower * power);
-        rightFrontDrive.setPower(rightFrontPower * power);
-        rightRearDrive.setPower(rightRearPower * power);
-
-        // Telemetry
-        myOpMode.telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
-        myOpMode.telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftRearPower, rightRearPower);
-        myOpMode.telemetry.addData("Heading", getHeading(AngleUnit.DEGREES));
+        driveRobotRelative(axial, lateral, yaw, power);
     }
 
 

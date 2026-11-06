@@ -25,6 +25,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.support.ConstantsPID;
 import org.firstinspires.ftc.teamcode.support.PIDController;
 
 public class DriveBasePID extends DriveBaseOdometry
@@ -233,20 +235,16 @@ public class DriveBasePID extends DriveBaseOdometry
 
     public void goToPositionNonBlocking(double yLocation, double xLocation, double headingDegree, double power) {
         updatePositionAndTelemetry();
+        updatePIDFromConstants();
 
         double xDistance = xLocation - getXPosition(DistanceUnit.INCH);
         double yDistance = yLocation - getYPosition(DistanceUnit.INCH);
 
-        double negativeRadianHeading = -getHeading(AngleUnit.RADIANS);
-
-        double rotatedX = xDistance * Math.cos(negativeRadianHeading) - yDistance * Math.sin(negativeRadianHeading);
-        double rotatedY = xDistance * Math.sin(negativeRadianHeading) + yDistance * Math.cos(negativeRadianHeading);
-
-        double axialPower = driveController.getOutputFromError(rotatedX);
-        double lateralPower = strafeController.getOutputFromError(rotatedY);
+        double axialPower = driveController.getOutputFromError(xDistance);
+        double lateralPower = strafeController.getOutputFromError(yDistance);
         double yawPower = yawController.getOutput(headingDegree);
 
-        drive(axialPower, -lateralPower, -yawPower, power);
+        drive(axialPower, lateralPower, -yawPower, power);
     }
 
     public void driveWithHold(double axialInput, double lateralInput, double yawInput) {
@@ -286,23 +284,13 @@ public class DriveBasePID extends DriveBaseOdometry
         double xError = desiredX - getXPosition(DistanceUnit.INCH);
         double yError = desiredY - getYPosition(DistanceUnit.INCH);
 
-        double negHeading = -getHeading(AngleUnit.RADIANS);
-
-        double rotatedX =
-                xError * Math.cos(negHeading) -
-                        yError * Math.sin(negHeading);
-
-        double rotatedY =
-                xError * Math.sin(negHeading) +
-                        yError * Math.cos(negHeading);
-
-        double axialPower = driveController.getOutputFromError(rotatedX);
-        double lateralPower = strafeController.getOutputFromError(rotatedY);
+        double axialPower = driveController.getOutputFromError(xError);
+        double lateralPower = strafeController.getOutputFromError(yError);
         double yawPower = yawController.getOutputFromError(
                 desiredHeading - getHeading(AngleUnit.DEGREES)
         );
 
-        drive(axialPower, lateralPower, yawPower);
+        drive(axialPower, lateralPower, -yawPower);
     }
 
     public void initDriveHold() {
@@ -330,14 +318,104 @@ public class DriveBasePID extends DriveBaseOdometry
         myOpMode.telemetry.addData("Heading Target:: ", targetHeading);
     }
 
+    private boolean xLocked = false;
+    private boolean yLocked = false;
+    private boolean headingLocked = false;
+
+    private double lockX = 0;
+    private double lockY = 0;
+    private double lockHeading = 0;
+
+    public void updatePIDFromConstants() {
+        driveController.setPID(DRIVE_KP, DRIVE_KI, DRIVE_KD);
+        strafeController.setPID(STRAFE_KP, STRAFE_KI, STRAFE_KD);
+        yawController.setPID(YAW_KP, YAW_KI, YAW_KD);
+    }
+
+    public void drivePerAxis(double axialInput, double lateralInput, double yawInput, double maxPower) {
+        updatePositionAndTelemetry();
+        updatePIDFromConstants();
+
+        Pose2D pose = getRobotPosition();
+        double currentX = pose.getX(DistanceUnit.INCH);
+        double currentY = pose.getY(DistanceUnit.INCH);
+        double currentHeading = pose.getHeading(AngleUnit.DEGREES);
+
+        // --- Axial (Field X axis: Forward / Backward) ---
+        double finalAxial;
+        if (Math.abs(axialInput) > 0.01) {
+            finalAxial = axialInput;
+            xLocked = false;
+        } else {
+            if (!xLocked) {
+                lockX = currentX;
+                driveController.reset(lockX);
+                xLocked = true;
+            }
+            double xDistance = lockX - currentX;
+            finalAxial = driveController.getOutputFromError(xDistance);
+        }
+
+        // --- Lateral (Field Y axis: Strafe Left / Right) ---
+        double finalLateral;
+        if (Math.abs(lateralInput) > 0.01) {
+            finalLateral = lateralInput;
+            yLocked = false;
+        } else {
+            if (!yLocked) {
+                lockY = currentY;
+                strafeController.reset(lockY);
+                yLocked = true;
+            }
+            double yDistance = lockY - currentY;
+            finalLateral = strafeController.getOutputFromError(yDistance);
+        }
+
+        // --- Yaw (Heading / Rotation) ---
+        double finalYaw;
+        if (Math.abs(yawInput) > 0.01) {
+            finalYaw = yawInput;
+            headingLocked = false;
+        } else {
+            if (!headingLocked) {
+                lockHeading = currentHeading;
+                yawController.reset(lockHeading);
+                headingLocked = true;
+            }
+            finalYaw = -yawController.getOutput(currentHeading);
+        }
+
+        drive(finalAxial, finalLateral, finalYaw, maxPower);
+    }
+
+    public void unlockAll() {
+        xLocked = false;
+        yLocked = false;
+        headingLocked = false;
+    }
+
     public void setLockHeading(double targetHeading){
+        this.lockHeading = targetHeading;
         yawController.reset(targetHeading);
+        headingLocked = true;
     }
 
     public void setLockX(double targetX){
+        this.lockX = targetX;
         driveController.reset(targetX);
+        xLocked = true;
     }
+
     public void setLockY(double targetY){
+        this.lockY = targetY;
         strafeController.reset(targetY);
+        yLocked = true;
     }
+
+    public boolean isXLocked() { return xLocked; }
+    public boolean isYLocked() { return yLocked; }
+    public boolean isHeadingLocked() { return headingLocked; }
+    public double getLockX() { return lockX; }
+    public double getLockY() { return lockY; }
+    public double getLockHeading() { return lockHeading; }
 }

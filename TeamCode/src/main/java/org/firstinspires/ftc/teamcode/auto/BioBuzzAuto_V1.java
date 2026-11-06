@@ -23,7 +23,7 @@ public class BioBuzzAuto_V1 extends LinearOpMode {
             bot.launch(4, 2000);
             bot.goTo(-900, -100, 0, 1, 1, 5);
             bot.goTo(-900, -2200, 0, 1, 1, 5);
-            bot.goTo(-1200, -2200, 0, 1, 1, 5);
+            bot.goTo(-1200,  -2200, 0, 1, 1, 5);
 
         }
     }

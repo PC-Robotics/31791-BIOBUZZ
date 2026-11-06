@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.driver;
 
 import static com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -11,6 +12,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
@@ -132,6 +134,17 @@ public class BioBuzzPIDTeleOp extends LinearOpMode {
             }
 
             telemetry.update();
+
+            // FTC Dashboard Telemetry
+            Telemetry dashboardTelemetry = FtcDashboard.getInstance().getTelemetry();
+            dashboardTelemetry.addData("Drive State", driveState);
+            dashboardTelemetry.addData("Launcher Target Vel", launcher_target_velocity);
+            dashboardTelemetry.addData("Launcher Real Vel", launcher.getVelocity());
+            if (tagData != null) {
+                dashboardTelemetry.addData("AprilTag " + DEFAULT_TARGET_TAG_ID + " Dist", tagData.getStraightDistanceInches());
+                dashboardTelemetry.addData("AprilTag " + DEFAULT_TARGET_TAG_ID + " HorizDist", tagData.getHorizontalDistanceInches());
+            }
+            dashboardTelemetry.update();
         }
 
         aprilTagDetector.stop();
@@ -260,7 +273,7 @@ public class BioBuzzPIDTeleOp extends LinearOpMode {
 
             case DRIVE:
 
-                robot.drive(axial, lateral, yawInput, 1);
+                robot.drivePerAxis(axial, lateral, yawInput, 1.0);
                 break;
         }
     }

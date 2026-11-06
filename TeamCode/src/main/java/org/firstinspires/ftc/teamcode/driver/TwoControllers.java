@@ -19,6 +19,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
+import org.firstinspires.ftc.teamcode.apriltag.AprilTagDetector;
 import org.firstinspires.ftc.teamcode.support.GoBildaPinpointDriver;
 
 import java.util.Locale;
@@ -56,11 +57,14 @@ public class TwoControllers extends OpMode {
     boolean subtracted = false;
     int launches = 0; // Tracks how many balls need to be launched
     GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
+    AprilTagDetector aprilTagDetector;
 
     @Override
     public void init() {
         // --- Sensors ---
         odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
+        aprilTagDetector = new AprilTagDetector();
+        aprilTagDetector.init(hardwareMap, telemetry);
 
         // Todo: measure & set offsets
         odo.setOffsets(-84.0, -168.0, DistanceUnit.MM);
@@ -281,5 +285,10 @@ public class TwoControllers extends OpMode {
         } else if (!gamepad1.left_bumper) {
             windmillServo.setPower(0);
         }
+    }
+
+    @Override
+    public void stop() {
+        if (aprilTagDetector != null) aprilTagDetector.stop();
     }
 }

@@ -16,8 +16,18 @@ public class AprilTagWebcamExample extends OpMode {
 
     @Override
     public void loop() {
-        aprilTagWebcam.update();
-        AprilTagSingleDetection id20 = aprilTagWebcam.getTagBySpecificId(20);
-        aprilTagWebcam.displayDetectionTelemetry(id20);
+//        for (int i=aprilTagWebcam.getAllDetections().size(); i > 0; i--) {
+//            aprilTagWebcam.update();
+//            AprilTagSingleDetection detectedTag = aprilTagWebcam.getTagBySpecificId(i);
+//            aprilTagWebcam.displayDetectionTelemetry(detectedTag);
+//        }
+
+        telemetry.addData("# Tags Detected", aprilTagWebcam.getAllDetections().size());
+        telemetry.addData("Raw Single Tags", (aprilTagWebcam.getDetectedTags()).toString());
+    }
+
+    @Override
+    public void stop() {
+        aprilTagWebcam.stop();
     }
 }

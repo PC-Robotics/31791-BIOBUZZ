@@ -14,6 +14,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.apriltag.AprilTagDetector;
 import org.firstinspires.ftc.teamcode.drive.DriveBasePID;
 
 /**
@@ -32,6 +33,7 @@ public class BioBuzzPositionLockTeleOp extends LinearOpMode {
 
     // Hardware
     private DriveBasePID robot;
+    private AprilTagDetector aprilTagDetector;
     private DcMotorEx launcher;
     private DcMotor intake;
     private CRServo leftIntakeServo;
@@ -58,6 +60,10 @@ public class BioBuzzPositionLockTeleOp extends LinearOpMode {
         // Initialize Drivetrain
         robot = new DriveBasePID(this, true);
         robot.init();
+
+        // Initialize AprilTag Camera Detector & Dashboard Stream
+        aprilTagDetector = new AprilTagDetector();
+        aprilTagDetector.init(hardwareMap, telemetry);
 
         // Initialize Launcher & Intake Actuators
         intake = hardwareMap.get(DcMotor.class, "intake");
@@ -98,6 +104,8 @@ public class BioBuzzPositionLockTeleOp extends LinearOpMode {
             telemetry.addData("Launcher Speed Target/Actual", "%d / %.0f", launcher_target_velocity, launcher.getVelocity());
             telemetry.update();
         }
+
+        aprilTagDetector.stop();
     }
 
     private void handleDrive() {
@@ -151,7 +159,7 @@ public class BioBuzzPositionLockTeleOp extends LinearOpMode {
                 break;
 
             case DRIVE:
-                robot.drive(axial, lateral, yawInput, 1);
+                robot.drivePerAxis(axial, lateral, yawInput, 1.0);
                 break;
         }
     }

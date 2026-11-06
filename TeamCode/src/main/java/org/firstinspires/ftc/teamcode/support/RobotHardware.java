@@ -173,8 +173,8 @@ public class RobotHardware {
     }
 
     public void goTo(double yLocation, double xLocation, double headingDegree, double power, double holdTime, double pathTime) {
-        xLocation = DistanceUnit.INCH.fromUnit(this.DistanceUnits, xLocation);
-        yLocation = DistanceUnit.INCH.fromUnit(this.DistanceUnits, yLocation);
+        xLocation = -1*DistanceUnit.INCH.fromUnit(DistanceUnit.MM, xLocation);
+        yLocation = DistanceUnit.INCH.fromUnit(DistanceUnit.MM, yLocation);
 
         ElapsedTime pathTimer = new ElapsedTime();
         ElapsedTime holdTimer = new ElapsedTime();
@@ -189,8 +189,11 @@ public class RobotHardware {
         while (opMode.opModeIsActive() && !exit) {
             updatePositionAndTelemetry();
 
-            double xDistance = xLocation - getXPosition(DistanceUnit.INCH);
+            double xDistance = xLocation + getXPosition(DistanceUnit.INCH);
             double yDistance = yLocation - getYPosition(DistanceUnit.INCH);
+
+            telemetry.addData("X Distance from target:", xDistance);
+            telemetry.addData("Y Distance form target:", yDistance);
 
             // Rotate odometry input left 90 degrees
             double tempXDistance = xDistance;
