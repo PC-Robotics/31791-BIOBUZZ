@@ -130,6 +130,25 @@ public class RobotHardware {
         rightRearDrive.setPower(rightRearPower);
     }
 
+    public void launch(double millis) {
+        ElapsedTime time = new ElapsedTime();
+        time.reset();
+
+        while(time.milliseconds() < millis) {
+            launcher.setVelocity(LAUNCHER_TARGET_VELOCITY);
+            if (launcher.getVelocity() > (LAUNCHER_TARGET_VELOCITY - LAUNCHER_MIN_VELOCITY)) {
+                windmillServo.setPower(1);
+                intake(0.5);
+            } else {
+                intake(0);
+                windmillServo.setPower(0);
+            }
+        }
+        launcher.setVelocity(0);
+        intake(0);
+
+    }
+
     public int launch(int launches, double timeoutMillis) {
         boolean reachedTarget = false;
         boolean subtracted = false;
@@ -155,7 +174,7 @@ public class RobotHardware {
                 subtracted = false;
             }
 
-            if (launcher.getVelocity() < (LAUNCHER_TARGET_VELOCITY - LAUNCHER_MIN_VELOCITY) && reachedTarget && !subtracted) {
+            if (launcher.getVelocity() < (LAUNCHER_TARGET_VELOCITY - LAUNCHER_MIN_VELOCITY - LAUNCHER_THRESHOLD) && reachedTarget && !subtracted) {
                 launches -= 1;
                 subtracted = true;
                 lastLaunchMillis.reset();
@@ -164,6 +183,9 @@ public class RobotHardware {
             if (launches > 0 && launcher.getVelocity() > (LAUNCHER_TARGET_VELOCITY - LAUNCHER_MIN_VELOCITY)) {
                 windmillServo.setPower(1);
                 intake(0.5);
+            } else {
+                intake(0);
+                windmillServo.setPower(0);
             }
         }
         windmillServo.setPower(0);

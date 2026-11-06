@@ -34,6 +34,7 @@ public class ConstantsPID
     //Constants dealing with launch velocity
     public static double LAUNCHER_TARGET_VELOCITY = 1275; // Target launcher speed for pollen
     public static double LAUNCHER_MIN_VELOCITY = 50; // An offset from target
+    public static double LAUNCHER_THRESHOLD = 50;
 
 
 
