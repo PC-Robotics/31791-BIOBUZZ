@@ -29,16 +29,16 @@ allprojects {
         maven { url 'https://maven.brott.dev' }
         maven { url 'https://maven.createlogs.org' }
     }
+
+    plugins.withId('java') {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(11)
+        }
+    }
 }
 
 repositories {
     mavenCentral()
     maven { url 'https://maven.brott.dev' }
     maven { url 'https://maven.createlogs.org' }
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
 }
