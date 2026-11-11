@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.support;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
+import org.firstinspires.ftc.vision.apriltag.AprilTagPoseFtc;
 import org.firstinspires.ftc.vision.apriltag.AprilTagSingleDetection;
 
 import java.util.ArrayList;
@@ -44,6 +45,12 @@ public class AprilTagReposition extends OpMode {
                 idList.add(detection.id);
             }
         }
+        if(!idList.isEmpty()) {
+            return aprilTagWebcam.getTagBySpecificId(idList.get(0));
+        }
+        AprilTagPoseFtc a = aprilTagWebcam.getTagBySpecificId(42).ftcPose;
         return null;
     }
+
+
 }

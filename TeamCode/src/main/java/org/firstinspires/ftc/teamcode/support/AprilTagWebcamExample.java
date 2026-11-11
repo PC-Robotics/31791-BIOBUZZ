@@ -17,7 +17,7 @@ public class AprilTagWebcamExample extends OpMode {
     @Override
     public void loop() {
         aprilTagWebcam.update();
-        AprilTagSingleDetection id20 = aprilTagWebcam.getTagBySpecificId(20);
-        aprilTagWebcam.displayDetectionTelemetry(id20);
+        AprilTagSingleDetection id42 = aprilTagWebcam.getTagBySpecificId(42);
+        aprilTagWebcam.displayDetectionTelemetry(id42);
     }
 }
