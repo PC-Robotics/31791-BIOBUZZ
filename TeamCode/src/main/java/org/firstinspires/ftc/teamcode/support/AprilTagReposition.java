@@ -3,10 +3,8 @@ package org.firstinspires.ftc.teamcode.support;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.vision.apriltag.AprilTagPoseFtc;
-import org.firstinspires.ftc.vision.apriltag.AprilTagSingleDetection;
+import org.firstinspires.ftc.vision.apriltag.AprilTagClusterDetection;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Autonomous(name = "Reposition AprilTag", group = "StarterBot")
@@ -28,27 +26,20 @@ public class AprilTagReposition extends OpMode {
     @Override
     public void loop() {
         aprilTagWebcam.update();
-        AprilTagSingleDetection id20 = aprilTagWebcam.getTagBySpecificId(20);
-        aprilTagWebcam.displayDetectionTelemetry(id20);
     }
 
     public void repositionToScore() {
         aprilTagWebcam.update();
-        List<AprilTagSingleDetection> tagList = aprilTagWebcam.getDetectedTags();
+        AprilTagClusterDetection tag = getCorrectTag(aprilTagWebcam.getDetectedTags());
     }
 
-    public AprilTagSingleDetection getCorrectAprilTag(List<AprilTagSingleDetection> tagList) {
-        List<Integer> idList = new ArrayList<>();
-        for(AprilTagSingleDetection detection: tagList) {
-            int id = detection.id;
-            if(isRed && id >= 30 && id < 38 || !isRed && id >= 38 && id < 46) {
-                idList.add(detection.id);
+    public AprilTagClusterDetection getCorrectTag(List<AprilTagClusterDetection> tagList) {
+        for(AprilTagClusterDetection detection: tagList) {
+            String name = detection.metadata.name;
+            if((isRed && (name.charAt(0) == 'R') || !isRed && (name.charAt(0) == 'B')) && Math.abs(detection.ftcPose.roll) < 90) {
+                return detection;
             }
         }
-        if(!idList.isEmpty()) {
-            return aprilTagWebcam.getTagBySpecificId(idList.get(0));
-        }
-        AprilTagPoseFtc a = aprilTagWebcam.getTagBySpecificId(42).ftcPose;
         return null;
     }
 

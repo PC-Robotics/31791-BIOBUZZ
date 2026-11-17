@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode.support;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.vision.apriltag.AprilTagSingleDetection;
+import org.firstinspires.ftc.vision.apriltag.AprilTagClusterDetection;
 
 @Autonomous(name = "Test AprilTag", group = "StarterBot")
 public class AprilTagWebcamExample extends OpMode {
@@ -17,7 +17,8 @@ public class AprilTagWebcamExample extends OpMode {
     @Override
     public void loop() {
         aprilTagWebcam.update();
-        AprilTagSingleDetection id42 = aprilTagWebcam.getTagBySpecificId(42);
-        aprilTagWebcam.displayDetectionTelemetry(id42);
+        AprilTagClusterDetection blueScoring = aprilTagWebcam.getTagBySpecificName("BLUE SCORING");
+        aprilTagWebcam.displayDetectionTelemetry(blueScoring);
+
     }
 }
